@@ -3,78 +3,93 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\Cart;
-use App\Models\User;
-use App\Models\Order;
+use App\Interfaces\ProductRepositoryInterface;
+use App\Interfaces\CartRepositoryInterface;
+use App\Interfaces\OrderRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
+
 class HomeController extends Controller
 {
+    protected $productRepository;
+    protected $cartRepository;
+    protected $orderRepository;
+
+    public function __construct(ProductRepositoryInterface $productRepository, CartRepositoryInterface $cartRepository, OrderRepositoryInterface $orderRepository) {
+        $this->productRepository = $productRepository;
+        $this->cartRepository = $cartRepository;
+        $this->orderRepository = $orderRepository;
+    }
+
     public function index(){
         return view('admin.index');
     }
+
     public function home(){
-        $product = Product::all();
+        $product = $this->productRepository->all();
         $count = 0;
         if(Auth::user()){
             $user_id = Auth::user()->id;
-            $count = Cart::where('user_id', $user_id)->count();
+            $count = $this->cartRepository->getByUserId($user_id)->count();
         }
-        return view('home.index', compact('product','count'));
+        return view('home.index', compact('product', 'count'));
     }
+
     public function product_details($id){
-        $data = Product::find($id);
+        $data = $this->productRepository->find($id);
         $count = 0;
         if(Auth::user()){
             $user_id = Auth::user()->id;
-            $count = Cart::where('user_id', $user_id)->count();
+            $count = $this->cartRepository->getByUserId($user_id)->count();
         }
-        return view('home.product_details',compact('data','count'));
+        return view('home.product_details', compact('data', 'count'));
     }
+
     public function add_cart($id){
-        $product_id = $id;
         $user = Auth::user();
-        $user_id = $user->id;
-        $data = new Cart;
-        $data->user_id = $user_id;
-        $data->product_id = $product_id;
-        $data->save();
+        $data = [
+            'user_id' => $user->id,
+            'product_id' => $id,
+        ];
+        $this->cartRepository->create($data);
         flash()->success('Add product to cart successfully');
         return redirect()->back();
     }
+
     public function mycart(){
+        $count = 0;
+        $cart = [];
         if(Auth::id()){
-            $user = Auth::user();
-            $user_id = $user->id;
-            $count = Cart::where('user_id', $user_id)->count();
-            $cart = Cart::where('user_id',$user_id)->get();
+            $user_id = Auth::user()->id;
+            $count = $this->cartRepository->getByUserId($user_id)->count();
+            $cart = $this->cartRepository->getByUserId($user_id);
         }
-        return view('home.mycart',compact('count','cart'));
+        return view('home.mycart', compact('count', 'cart'));
     }
+
     public function remove_product_cart($id){
-        $user = Auth::user();
-        $user_id = $user->id;
-        $data = Cart::where('id', $id)->where('user_id',$user_id)->first();
-        $data->delete();
+        $user_id = Auth::user()->id;
+        $this->cartRepository->delete($id);
         flash()->success('Remove product cart successfully');
         return redirect()->back();
     }
+
     public function confirm_order(Request $request){
-        $name = $request->name;
-        $address = $request->address;
-        $phone = $request->phone;
+        $data = $request->only(['name', 'address', 'phone']);
         $user_id = Auth::user()->id;
-        $cart = Cart::where('user_id',$user_id)->get();
+        $cart = $this->cartRepository->getByUserId($user_id);
+
         foreach($cart as $carts){
-            $order = new Order;
-            $order->name = $name;
-            $order->rec_address = $address;
-            $order->phone = $phone;
-            $order->user_id = $user_id;
-            $order->product_id = $carts->product_id;
-            $order->save();
+            $orderData = [
+                'name' => $data['name'],
+                'rec_address' => $data['address'],
+                'phone' => $data['phone'],
+                'user_id' => $user_id,
+                'product_id' => $carts->product_id,
+            ];
+            $this->orderRepository->create($orderData);
         }
-        $cart_remove = Cart::where('user_id', $user_id)->delete();
+
+        $this->cartRepository->delete($user_id); // Xóa tất cả sản phẩm trong giỏ hàng
         flash()->success('Order successfully');
         return redirect()->back();
     }
