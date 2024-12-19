@@ -1,109 +1,100 @@
 <?php
 
 namespace App\Http\Controllers;
-use Flasher\Prime\FlasherInterface;
-use Illuminate\Http\Request;
 
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\Order;
+use App\Interfaces\ProductRepositoryInterface;
+use App\Interfaces\CategoryRepositoryInterface;
+use App\Interfaces\OrderRepositoryInterface;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-    public function view_category(){
-        $data = Category::all();
+    protected $productRepository;
+    protected $categoryRepository;
+    protected $orderRepository;
+
+    public function __construct(ProductRepositoryInterface $productRepository, CategoryRepositoryInterface $categoryRepository, OrderRepositoryInterface $orderRepository) {
+        $this->productRepository = $productRepository;
+        $this->categoryRepository = $categoryRepository;
+        $this->orderRepository = $orderRepository;
+    }
+
+    public function view_category() {
+        $data = $this->categoryRepository->all();
         return view('admin.category', compact('data'));
     }
-    public function add_category(Request $request){
-        $category = new Category;
-        $category->category_name = $request->category;
-        $category->save();
+
+    public function add_category(Request $request) {
+        $this->categoryRepository->create(['category_name' => $request->category]);
         flash()->success('Category added successfully');
         return redirect()->back();
     }
-    public function delete_category($id){
-        $data = Category::find($id);
-        $data->delete();
+
+    public function delete_category($id) {
+        $this->categoryRepository->delete($id);
         flash()->success('Category deleted successfully');
         return redirect()->back();
     }
-    public function edit_category($id){
-        $data = Category::find($id);
+
+    public function edit_category($id) {
+        $data = $this->categoryRepository->find($id);
         return view('admin.edit_category', compact('data'));
     }
-    public function update_category(Request $request, $id){
-        $data = Category::find($id);
-        $data->category_name = $request->category;
-        $data->save();
+
+    public function update_category(Request $request, $id) {
+        $this->categoryRepository->update($id, ['category_name' => $request->category]);
         flash()->success('Category updated successfully');
         return redirect('/view_category');
     }
-    public function add_product(){
-        $category = Category::all();
+
+    public function add_product() {
+        $category = $this->categoryRepository->all();
         return view('admin.add_product', compact('category'));
     }
-    public function upload_product(Request $request){
-        $data = new Product();
-        $data->title = $request->title;
-        $data->description = $request->description;
-        $data->price = $request->price;
-        $data->category = $request->category;
-        $data->quantity = $request->qty;
-        $image = $request->image;
-        if($image){
-            $imagename = time() . '.' . $image->getClientOriginalExtension();
+
+    public function upload_product(Request $request) {
+        $data = $request->all();
+        if ($request->hasFile('image')) {
+            $imagename = time() . '.' . $request->image->getClientOriginalExtension();
             $request->image->move('products', $imagename);
-            $data->image = $imagename;
+            $data['image'] = $imagename;
         }
-        $data->save();
+        $this->productRepository->create($data);
         flash()->success('Product added successfully');
         return redirect('/view_product');
     }
-    public function view_product(){
-        $product = Product::paginate(5);
+
+    public function view_product() {
+        $product = $this->productRepository->all();
         return view('admin.view_product', compact('product'));
     }
-    public function delete_product($id){
-        $data = Product::find($id);
-        $image_path = public_path('products/' . $data->image);
-        if(file_exists($image_path)){
-            unlink($image_path);
-        }
-        $data->delete();
+
+    public function delete_product($id) {
+        $this->productRepository->delete($id);
         flash()->success('Product deleted successfully');
         return redirect()->back();
     }
-    public function update_product($id){
-        $data = Product::find($id);
-        $category = Category::where('category_name','<>',$data->category)->get();
-        return view('admin.update_product', compact('data','category'));
+
+    public function update_product($id) {
+        $data = $this->productRepository->find($id);
+        $category = $this->categoryRepository->all()->where('category_name', '<>', $data->category);
+        return view('admin.update_product', compact('data', 'category'));
     }
-    public function edit_product(Request $request, $id){
-        $data = Product::find($id);
-        $data->title = $request->title;
-        $data->description = $request->description;
-        $data->quantity = $request->quantity;
-        $data->category = $request->category;
-        $data->price = $request->price;
-        $image = $request->image;
-        if($image){
-            $imagename = time() . '.' . $image->getClientOriginalExtension();
-            $request->image->move('products',$imagename);
-            $data->image = $imagename;
-        }
-        $data->save();
+
+    public function edit_product(Request $request, $id) {
+        $data = $this->productRepository->update($id, $request->all());
         flash()->success('Product updated successfully');
         return redirect('/view_product');
     }
-    public function product_search(Request $request){
+
+    public function product_search(Request $request) {
         $search = $request->search;
-        $product = Product::where('title','LIKE','%' . $search . '%')
-        ->orWhere('category','LIKE','%' . $search . '%')
-        ->paginate(6);
+        $product = $this->productRepository->search($search);
         return view('admin.view_product', compact('product'));
     }
-    public function view_order(){
-        $data = Order::all();
-        return view('admin.view_order',compact('data'));
+
+    public function view_order() {
+        $data = $this->orderRepository->all();
+        return view('admin.view_order', compact('data'));
     }
 }
