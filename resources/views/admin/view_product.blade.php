@@ -62,7 +62,7 @@
                     <tr>
                         <td>{{$products->id}}</td>
                         <td>
-                            <img height="120" src="products/{{$products->image}}" alt="">
+                            <img height="120" src="{{ asset('storage/products/'.$products->image) }}" alt="">
                         </td>
                         <td>{{$products->title}}</td>
                         <td>{!!Str::limit($products->description,100)!!}</td>

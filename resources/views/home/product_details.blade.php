@@ -36,7 +36,7 @@
         <div class="col-md-12">
           <div class="box">
               <div class="div_center">
-                <img width="400px" src="/products/{{$data->image}}" alt="">
+                <img width="400px" src="{{ asset('storage/products/'.$data->image) }}" alt="">
               </div>
               <div class="detail-box">
                 <h6>{{$data->title}}</h6>

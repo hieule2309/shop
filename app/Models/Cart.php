@@ -9,6 +9,7 @@ use App\Models\Product;
 class Cart extends Model
 {
     use HasFactory;
+    protected $fillable = ['user_id', 'product_id']; // Add other fillable fields as necessary
     public function user(){
         return $this->hasOne(User::class,'id','user_id');
     }

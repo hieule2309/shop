@@ -32,4 +32,10 @@ class CartRepository implements CartRepositoryInterface {
     public function getByUserId($userId) {
         return Cart::where('user_id', $userId)->get();
     }
+    
+    public function deleteByUserId($userId)
+    {
+        $cart = Cart::where('user_id', $userId);
+        return $cart->delete();
+    }
 }

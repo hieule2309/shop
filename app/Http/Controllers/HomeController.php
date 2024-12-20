@@ -89,7 +89,7 @@ class HomeController extends Controller
             $this->orderRepository->create($orderData);
         }
 
-        $this->cartRepository->delete($user_id); // Xóa tất cả sản phẩm trong giỏ hàng
+        $this->cartRepository->deleteByUserId($user_id); 
         flash()->success('Order successfully');
         return redirect()->back();
     }

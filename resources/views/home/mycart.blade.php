@@ -83,7 +83,7 @@
             @foreach($cart as $cart)
             <tr>
                 <td>
-                    <img width="150" src="/products/{{$cart->product->image}}" alt="">
+                    <img width="150" src="{{ asset('storage/products/'.$cart->product->image) }}" alt="">
                 </td>
                 <td>{{$cart->product->title}}</td>
                 <td>{{ number_format($cart->product->price, 0, ',', '.') }}đ</td>

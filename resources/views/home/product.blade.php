@@ -11,7 +11,7 @@
         <div class="col-sm-6 col-md-4 col-lg-3">
           <div class="box">
               <div class="img-box">
-                <img src="products/{{$products->image}}" alt="">
+                <img src="{{ asset('storage/products/'.$products->image) }}" alt="">
               </div>
               <div class="detail-box">
                 <h6>{{$products->title}}</h6>

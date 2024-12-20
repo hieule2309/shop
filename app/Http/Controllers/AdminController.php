@@ -6,7 +6,8 @@ use App\Interfaces\ProductRepositoryInterface;
 use App\Interfaces\CategoryRepositoryInterface;
 use App\Interfaces\OrderRepositoryInterface;
 use Illuminate\Http\Request;
-
+use App\Jobs\UploadImageJob;
+use Illuminate\Support\Facades\Storage;
 class AdminController extends Controller
 {
     protected $productRepository;
@@ -54,13 +55,19 @@ class AdminController extends Controller
 
     public function upload_product(Request $request) {
         $data = $request->all();
+        $data['quantity'] = $data['qty'];
         if ($request->hasFile('image')) {
             $imagename = time() . '.' . $request->image->getClientOriginalExtension();
-            $request->image->move('products', $imagename);
+            // Tiến hành lưu ảnh vào folder tạm
+            // $request->image->move('images\temp', $imagename);
+            $path = $request->file('image')->storeAs('images/temp', $imagename);
             $data['image'] = $imagename;
         }
-        $this->productRepository->create($data);
+        $product = $this->productRepository->create($data);
+        UploadImageJob::dispatch($imagename, $product);
+        // Sau khi đã lưu ảnh vào folder tạm và tạo sản phẩm thành công thì tiến hành gửi job để xử lý hỉnh ảnh
         flash()->success('Product added successfully');
+        // exit;
         return redirect('/view_product');
     }
 
