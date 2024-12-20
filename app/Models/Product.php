@@ -16,4 +16,12 @@ class Product extends Model
         'category',
         'quantity'
     ];
+
+    public function option(){
+        return $this->hasMany(Option::class);
+    }
+
+    public function optionAttribute(){
+        return $this->hasMany(OptionAttribute::class);
+    }
 }
