@@ -51,7 +51,7 @@
                         <td>{{$data->phone}}</td>
                         <td>{{$data->product->title}}</td>
                         <td>
-                            <img width="150" src="/products/{{$data->product->image}}" alt="">
+                            <img width="150" src="{{ asset('storage/products/'.$data->product->image) }}" alt="">
                         </td>
                         <td>{{ number_format($data->product->price, 0, ',', '.') }}đ</td>
                     </tr>
