@@ -3,21 +3,21 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Interfaces\ProductRepositoryInterface;
-use App\Interfaces\CartRepositoryInterface;
-use App\Interfaces\OrderRepositoryInterface;
+use App\Services\ProductService;
+use App\Services\CartService;
+use App\Services\OrderService;
 use Illuminate\Support\Facades\Auth;
 
 class HomeController extends Controller
 {
-    protected $productRepository;
-    protected $cartRepository;
-    protected $orderRepository;
+    protected $productService;
+    protected $cartService;
+    protected $orderService;
 
-    public function __construct(ProductRepositoryInterface $productRepository, CartRepositoryInterface $cartRepository, OrderRepositoryInterface $orderRepository) {
-        $this->productRepository = $productRepository;
-        $this->cartRepository = $cartRepository;
-        $this->orderRepository = $orderRepository;
+    public function __construct(ProductService $productService, CartService $cartService, OrderService $orderService) {
+        $this->productService = $productService;
+        $this->cartService = $cartService;
+        $this->orderService = $orderService;
     }
 
     public function index(){
@@ -25,50 +25,31 @@ class HomeController extends Controller
     }
 
     public function home(){
-        $product = $this->productRepository->all();
-        $count = 0;
-        if(Auth::user()){
-            $user_id = Auth::user()->id;
-            $count = $this->cartRepository->getByUserId($user_id)->count();
-        }
+        $product = $this->productService->getAllProducts();
+        $count = $this->cartService->getCartCount(Auth::id());
         return view('home.index', compact('product', 'count'));
     }
 
     public function product_details($id){
-        $data = $this->productRepository->find($id);
-        $count = 0;
-        if(Auth::user()){
-            $user_id = Auth::user()->id;
-            $count = $this->cartRepository->getByUserId($user_id)->count();
-        }
+        $data = $this->productService->findProduct($id);
+        $count = $this->cartService->getCartCount(Auth::id());
         return view('home.product_details', compact('data', 'count'));
     }
 
     public function add_cart($id){
-        $user = Auth::user();
-        $data = [
-            'user_id' => $user->id,
-            'product_id' => $id,
-        ];
-        $this->cartRepository->create($data);
+        $this->cartService->addProductToCart(Auth::id(), $id);
         flash()->success('Add product to cart successfully');
         return redirect()->back();
     }
 
     public function mycart(){
-        $count = 0;
-        $cart = [];
-        if(Auth::id()){
-            $user_id = Auth::user()->id;
-            $count = $this->cartRepository->getByUserId($user_id)->count();
-            $cart = $this->cartRepository->getByUserId($user_id);
-        }
+        $count = $this->cartService->getCartCount(Auth::id());
+        $cart = $this->cartService->getCartByUserId(Auth::id());
         return view('home.mycart', compact('count', 'cart'));
     }
 
     public function remove_product_cart($id){
-        $user_id = Auth::user()->id;
-        $this->cartRepository->delete($id);
+        $this->cartService->removeProductFromCart($id);
         flash()->success('Remove product cart successfully');
         return redirect()->back();
     }
@@ -76,20 +57,9 @@ class HomeController extends Controller
     public function confirm_order(Request $request){
         $data = $request->only(['name', 'address', 'phone']);
         $user_id = Auth::user()->id;
-        $cart = $this->cartRepository->getByUserId($user_id);
-
-        foreach($cart as $carts){
-            $orderData = [
-                'name' => $data['name'],
-                'rec_address' => $data['address'],
-                'phone' => $data['phone'],
-                'user_id' => $user_id,
-                'product_id' => $carts->product_id,
-            ];
-            $this->orderRepository->create($orderData);
-        }
-
-        $this->cartRepository->deleteByUserId($user_id); 
+        $cart = $this->cartService->getCartByUserId($user_id);
+        $this->orderService->createUserOrder($cart, $data);
+        $this->cartService->clearCart();
         flash()->success('Order successfully');
         return redirect()->back();
     }

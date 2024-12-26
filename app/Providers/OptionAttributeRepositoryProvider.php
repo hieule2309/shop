@@ -7,7 +7,7 @@ use App\Interfaces\OptionAttributeRepositoryInterface;
 use App\Interfaces\OptionRepositoryInterface;
 use App\Repositories\OptionAttributeRepository;
 
-class OptionAttributeServiceProvider extends ServiceProvider
+class OptionAttributeRepositoryProvider extends ServiceProvider
 {
     /**
      * Register services.

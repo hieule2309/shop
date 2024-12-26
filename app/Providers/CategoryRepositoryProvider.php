@@ -4,18 +4,16 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Interfaces\CategoryRepositoryInterface;
-use App\Services\CategoryService;
+use App\Repositories\CategoryRepository;
 
-class CategoryServiceProvider extends ServiceProvider
+class CategoryRepositoryProvider extends ServiceProvider
 {
     /**
      * Register services.
      */
     public function register(): void
     {
-        $this->app->bind(CategoryService::class, function($app){
-            return new CategoryService($app->make(CategoryRepositoryInterface::class));
-        });
+        $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
     }
 
     /**

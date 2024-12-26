@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use App\Interfaces\OrderRepositoryInterface;
-use App\Repositories\OrderRepository;
+use App\Services\OrderService;
 
 class OrderServiceProvider extends ServiceProvider
 {
@@ -13,8 +13,10 @@ class OrderServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->bind(OrderRepositoryInterface::class, OrderRepository::class);
-        
+        // Binding cho OrderService
+        $this->app->bind(OrderService::class, function ($app) {
+            return new OrderService($app->make(OrderRepositoryInterface::class));
+        });
     }
 
     /**
